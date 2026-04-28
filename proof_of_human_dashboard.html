@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proof of Human</title>
+ <style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --neon-green: #00ff88;
+    --neon-blue: #00cfff;
+    --neon-red: #ff3355;
+    --neon-amber: #ffaa00;
+    --dark-base: #03080f;
+    --dark-panel: #080f1a;
+    --dark-card: #0d1829;
+    --dark-border: #0d2040;
+    --grid-line: rgba(0,207,255,0.06);
+    --text-primary: #e2f0ff;
+    --text-muted: #4a7090;
+    --font-hud: 'Share Tech Mono', monospace;
+    --font-display: 'Orbitron', sans-serif;
+    --font-body: 'Rajdhani', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--dark-base);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(8,15,26,0.95);
+    border-bottom: 1px solid var(--dark-border);
+    backdrop-filter: blur(10px);
+    position: sticky; top:0; z-index:100;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-shield {
+    width: 28px; height: 28px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-shield svg { width: 28px; height: 28px; }
+  .status-pills {
+    display: flex; gap: 10px; align-items: center;
+  }
+  .pill {
+    font-family: var(--font-hud);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    border: 1px solid;
+  }
+  .pill-green { color: var(--neon-green); border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.05); }
+  .pill-blue  { color: var(--neon-blue);  border-color: rgba(0,207,255,0.3); background: rgba(0,207,255,0.05); }
+  .pill-amber { color: var(--neon-amber); border-color: rgba(255,170,0,0.3);  background: rgba(255,170,0,0.05); }
+  .session-id {
+    font-family: var(--font-hud);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  /* MAIN LAYOUT */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    padding: 16px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* PANEL BASE */
+  .panel {
+    background: rgba(8,15,26,0.7);
+    border: 1px solid var(--dark-border);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute; top:0; left:0; right:0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+    opacity: 0.4;
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid rgba(13,32,64,0.8);
+  }
+  .panel-title {
+    font-family: var(--font-display);
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    animation: blink 2s ease-in-out infinite;
+  }
+  .dot-green { background: var(--neon-green); box-shadow: 0 0 6px var(--neon-green); }
+  .dot-red   { background: var(--neon-red);   box-shadow: 0 0 6px var(--neon-red); }
+  .dot-amber { background: var(--neon-amber); box-shadow: 0 0 6px var(--neon-amber); }
+  .dot-blue  { background: var(--neon-blue);  box-shadow: 0 0 6px var(--neon-blue); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* CAMERA PANEL */
+  .camera-panel {
+    grid-row: span 1;
+    aspect-ratio: auto;
+  }
+  .camera-body {
+    position: relative;
+    background: #000;
+    margin: 0;
+    overflow: hidden;
+    height: 420px;
+  }
+
+  #videoEl {
+    width:100%; height:100%; object-fit:cover;
+    display:block;
+    filter: contrast(1.05) saturate(0.85);
+  }
+
+  /* SCAN OVERLAY */
+  .scan-overlay {
+    position:absolute; inset:0;
+    pointer-events:none;
+  }
+
+  /* Face bounding box */
+  .face-box {
+    position:absolute;
+    top:18%; left:30%; width:40%; height:55%;
+    border: 1.5px solid var(--neon-green);
+    box-shadow: 0 0 12px rgba(0,255,136,0.4), inset 0 0 20px rgba(0,255,136,0.06);
+    transition: border-color 0.3s;
+  }
+  .face-box.threat { border-color: var(--neon-red); box-shadow: 0 0 16px rgba(255,51,85,0.5), inset 0 0 24px rgba(255,51,85,0.08); }
+
+  /* Corner markers */
+  .corner {
+    position:absolute; width:14px; height:14px;
+    border-color: var(--neon-green);
+    border-style: solid;
+    transition: border-color 0.3s;
+  }
+  .face-box.threat .corner { border-color: var(--neon-red); }
+  .corner.tl { top:-1px; left:-1px; border-width: 2px 0 0 2px; }
+  .corner.tr { top:-1px; right:-1px; border-width: 2px 2px 0 0; }
+  .corner.bl { bottom:-1px; left:-1px; border-width: 0 0 2px 2px; }
+  .corner.br { bottom:-1px; right:-1px; border-width: 0 2px 2px 0; }
+
+  /* Scan line */
+  .scan-line {
+    position:absolute; left:0; right:0;
+    height:2px;
+    background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
+    box-shadow: 0 0 10px var(--neon-green);
+    animation: scanAnim 2.5s ease-in-out infinite;
+    opacity: 0;
+  }
+  .camera-panel.scanning .scan-line { opacity: 1; }
+  @keyframes scanAnim {
+    0%   { top:0%;   opacity:0; }
+    5%   { opacity:1; }
+    95%  { opacity:1; }
+    100% { top:100%; opacity:0; }
+  }
+
+  /* Grid overlay */
+  .grid-overlay {
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(0,207,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,207,255,0.04) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  /* Pulse ring */
+  .pulse-ring {
+    position:absolute;
+    top:50%; left:50%;
+    width:120px; height:120px;
+    border-radius:50%;
+    border: 1px solid var(--neon-blue);
+    transform: translate(-50%,-50%) scale(0);
+    opacity:0;
+    animation: pulseRing 3s ease-out infinite;
+    pointer-events:none;
+  }
+  .pulse-ring:nth-child(2) { animation-delay: 1s; }
+  .pulse-ring:nth-child(3) { animation-delay: 2s; }
+  @keyframes pulseRing {
+    0%   { transform:translate(-50%,-50%) scale(0.3); opacity:0.7; }
+    100% { transform:translate(-50%,-50%) scale(2.5); opacity:0; }
+  }
+
+  /* Detection markers */
+  .marker {
+    position:absolute;
+    width:8px; height:8px;
+    border-radius:50%;
+    background: var(--neon-amber);
+    box-shadow: 0 0 8px var(--neon-amber);
+    animation: markerPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes markerPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.5)} }
+  .marker-label {
+    position:absolute;
+    font-family:var(--font-hud);
+    font-size:9px;
+    color:var(--neon-amber);
+    white-space:nowrap;
+    opacity:0.8;
+  }
+
+  /* Bottom HUD */
+  .cam-hud {
+    position:absolute; bottom:0; left:0; right:0;
+    padding:10px 14px;
+    background: linear-gradient(transparent, rgba(3,8,15,0.9));
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .hud-value {
+    font-family:var(--font-hud);
+    font-size:10px;
+    color:var(--neon-blue);
+    letter-spacing:1px;
+  }
+  .rec-dot {
+    width:7px; height:7px; border-radius:50%;
+    background: var(--neon-red);
+    box-shadow: 0 0 6px var(--neon-red);
+    animation:blink 1s ease-in-out infinite;
+    display:inline-block; margin-right:5px;
+  }
+
+  /* CAMERA CONTROLS */
+  .cam-controls {
+    display:flex; gap:10px; padding:12px 14px;
+    align-items:center;
+  }
+  .btn {
+    font-family:var(--font-display);
+    font-size:9px;
+    letter-spacing:2px;
+    padding:8px 18px;
+    border:1px solid;
+    border-radius:2px;
+    cursor:pointer;
+    text-transform:uppercase;
+    transition:all 0.2s;
+    background:transparent;
+  }
+  .btn-primary {
+    color: var(--neon-green); border-color: var(--neon-green);
+  }
+  .btn-primary:hover { background:rgba(0,255,136,0.1); box-shadow:0 0 12px rgba(0,255,136,0.2); }
+  .btn-danger  { color:var(--neon-red); border-color:var(--neon-red); }
+  .btn-danger:hover { background:rgba(255,51,85,0.1); }
+  .btn-ghost   { color:var(--text-muted); border-color:var(--dark-border); font-size:8px; }
+  .btn-ghost:hover { color:var(--text-primary); border-color:var(--text-muted); }
+  .btn:disabled { opacity:0.3; cursor:not-allowed; }
+
+  .voice-challenge {
+    flex:1;
+    font-family:var(--font-hud);
+    font-size:11px;
+    padding:7px 12px;
+    background:rgba(13,24,41,0.8);
+    border:1px solid var(--dark-border);
+    color:var(--neon-amber);
+    border-radius:2px;
+    letter-spacing:1px;
+    text-align:center;
+    display:none;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+  /* RIGHT SIDEBAR */
+  .sidebar {
+    display:flex; flex-direction:column; gap:12px;
+  }
+
+  /* HUMANITY SCORE */
+  .score-panel .panel-body { padding:20px 14px 14px; display:flex; flex-direction:column; align-items:center; }
+  .score-arc {
+    position:relative; width:160px; height:100px; margin-bottom:8px;
+  }
+  .score-arc svg { overflow:visible; }
+  #score-arc-path {
+    transition: stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1), stroke 0.4s;
+  }
+  .score-number {
+    position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+    font-family:var(--font-display);
+    font-size:38px;
+    font-weight:900;
+    color:var(--neon-green);
+    line-height:1;
+    transition:color 0.4s;
+  }
+  .score-label {
+    font-family:var(--font-hud);
+    font-size:9px;
+    letter-spacing:2px;
+    color:var(--text-muted);
+    margin-bottom:10px;
+  }
+  .verdict-badge {
+    font-family:var(--font-display);
+    font-size:11px;
+    letter-spacing:3px;
+    padding:6px 20px;
+    border-radius:2px;
+    font-weight:700;
+    text-transform:uppercase;
+    transition:all 0.4s;
+    text-align:center;
+    width:100%;
+  }
+  .verdict-human   { color:var(--neon-green); border:1px solid rgba(0,255,136,0.4); background:rgba(0,255,136,0.07); }
+  .verdict-ai      { color:var(--neon-red);   border:1px solid rgba(255,51,85,0.4); background:rgba(255,51,85,0.07); }
+  .verdict-scanning{ color:var(--neon-blue);  border:1px solid rgba(0,207,255,0.3); background:rgba(0,207,255,0.05); }
+
+  /* SHIELD ANIMATION */
+  .shield-wrap {
+    width:100%; display:flex; justify-content:center; padding:4px 0 0;
+  }
+  .shield-svg { width:44px; height:44px; opacity:0.3; transition:opacity 0.5s; }
+  .shield-svg.active { opacity:1; animation:shieldPulse 2s ease-in-out infinite; }
+  @keyframes shieldPulse {
+    0%,100%{filter:drop-shadow(0 0 6px var(--neon-green))}
+    50%{filter:drop-shadow(0 0 18px var(--neon-green))}
+  }
+  .shield-svg.threat { animation:shieldThreat 0.4s ease-in-out infinite; }
+  @keyframes shieldThreat {
+    0%,100%{filter:drop-shadow(0 0 6px var(--neon-red)); opacity:1}
+    50%{filter:drop-shadow(0 0 22px var(--neon-red)); opacity:0.6}
+  }
+
+  /* SIGNALS */
+  .signals-panel .panel-body { padding:10px 14px 12px; }
+  .signal-row {
+    display:flex; align-items:center; gap:10px;
+    padding:7px 0;
+    border-bottom:1px solid rgba(13,32,64,0.5);
+  }
+  .signal-row:last-child { border-bottom:none; }
+  .signal-name {
+    font-family:var(--font-hud);
+    font-size:10px;
+    color:var(--text-muted);
+    letter-spacing:1px;
+    width:110px;
+    flex-shrink:0;
+  }
+  .signal-bar-track {
+    flex:1; height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden;
+  }
+  .signal-bar-fill {
+    height:100%; border-radius:2px;
+    transition:width 0.6s ease;
+  }
+  .bar-green { background: linear-gradient(90deg, #00994d, var(--neon-green)); }
+  .bar-blue  { background: linear-gradient(90deg, #005c8a, var(--neon-blue)); }
+  .bar-amber { background: linear-gradient(90deg, #8a5a00, var(--neon-amber)); }
+  .bar-red   { background: linear-gradient(90deg, #8a001e, var(--neon-red)); }
+  .signal-val {
+    font-family:var(--font-hud);
+    font-size:10px;
+    width:36px; text-align:right;
+    color:var(--text-primary);
+    flex-shrink:0;
+  }
+  .signal-icon {
+    width:20px; height:20px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* MINI SPARKLINE */
+  .sparkline { width:100%; height:36px; }
+  .sparkline-wrap { padding:2px 14px 8px; }
+
+  /* LOGS */
+  .logs-panel { grid-column: 1/-1; }
+  .logs-body {
+    padding:10px 14px;
+    max-height:160px; overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:var(--dark-border) transparent;
+  }
+  .log-entry {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:5px 0;
+    border-bottom:1px solid rgba(13,32,64,0.4);
+    animation: fadeIn 0.3s ease;
+    font-size:12px;
+  }
+  .log-ts {
+    font-family:var(--font-hud);
+    font-size:9px;
+    color:var(--text-muted);
+    flex-shrink:0; padding-top:2px;
+    width:70px;
+  }
+  .log-tag {
+    font-family:var(--font-hud);
+    font-size:8px;
+    letter-spacing:1px;
+    padding:2px 7px;
+    border-radius:1px;
+    flex-shrink:0;
+  }
+  .tag-ok   { color:var(--neon-green); background:rgba(0,255,136,0.08); }
+  .tag-warn { color:var(--neon-amber); background:rgba(255,170,0,0.08); }
+  .tag-fail { color:var(--neon-red);   background:rgba(255,51,85,0.08); }
+  .tag-info { color:var(--neon-blue);  background:rgba(0,207,255,0.08); }
+  .log-msg {
+    font-family:var(--font-hud);
+    font-size:10px;
+    color:var(--text-primary);
+    opacity:0.8;
+    letter-spacing:0.5px;
+    flex:1;
+  }
+
+  /* ZKP BADGE */
+  .zkp-panel .panel-body {
+    padding:14px; display:flex; flex-direction:column; gap:10px;
+  }
+  .zkp-row {
+    display:flex; align-items:center; gap:12px;
+  }
+  .zkp-icon {
+    width:36px; height:36px;
+    border:1px solid rgba(0,207,255,0.3);
+    border-radius:3px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    background:rgba(0,207,255,0.05);
+  }
+  .zkp-info { flex:1; }
+  .zkp-title {
+    font-family:var(--font-display);
+    font-size:9px; letter-spacing:2px;
+    color:var(--text-primary);
+    text-transform:uppercase;
+    margin-bottom:2px;
+  }
+  .zkp-sub {
+    font-family:var(--font-hud);
+    font-size:9px;
+    color:var(--text-muted);
+    letter-spacing:0.5px;
+  }
+  .zkp-status {
+    font-family:var(--font-hud);
+    font-size:9px; letter-spacing:1px;
+    padding:3px 8px;
+    border-radius:1px;
+    flex-shrink:0;
+  }
+  .zkp-verified { color:var(--neon-green); background:rgba(0,255,136,0.08); }
+  .zkp-pending  { color:var(--neon-amber); background:rgba(255,170,0,0.08); }
+
+  /* ALERT OVERLAY */
+  .alert-overlay {
+    position:fixed; inset:0;
+    background:rgba(255,51,85,0.06);
+    border:2px solid rgba(255,51,85,0.3);
+    pointer-events:none;
+    opacity:0;
+    transition:opacity 0.3s;
+    z-index:200;
+    animation:none;
+  }
+  .alert-overlay.active { opacity:1; animation:alertFlash 0.5s ease-in-out infinite; }
+  @keyframes alertFlash { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  /* THREAT BANNER */
+  .threat-banner {
+    display:none;
+    background:rgba(255,51,85,0.12);
+    border:1px solid rgba(255,51,85,0.5);
+    padding:8px 16px;
+    font-family:var(--font-display);
+    font-size:10px;
+    letter-spacing:3px;
+    color:var(--neon-red);
+    text-align:center;
+    text-transform:uppercase;
+    margin:0 20px 4px;
+  }
+  .threat-banner.show { display:block; animation:fadeIn 0.3s ease; }
+
+  /* BLUR LOCK for AI state */
+  .blur-lock {
+    position:absolute; inset:0;
+    backdrop-filter:blur(0px);
+    background:rgba(255,51,85,0);
+    transition:all 0.5s;
+    pointer-events:none;
+    display:flex; align-items:center; justify-content:center;
+    z-index:50;
+  }
+  .blur-lock.active {
+    backdrop-filter:blur(8px);
+    background:rgba(30,0,6,0.6);
+    pointer-events:all;
+  }
+  .lock-icon {
+    font-size:48px; opacity:0;
+    transition:opacity 0.5s;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .blur-lock.active .lock-icon { opacity:1; }
+  .lock-txt {
+    font-family:var(--font-display);
+    font-size:12px; letter-spacing:3px;
+    color:var(--neon-red);
+    text-transform:uppercase;
+  }
+
+  /* SESSION TRUST */
+  .trust-bar-wrap { padding:8px 14px 12px; }
+  .trust-bar-track {
+    height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;
+  }
+  .trust-bar-fill {
+    height:100%; border-radius:3px;
+    background:linear-gradient(90deg, #005c8a, var(--neon-blue));
+    transition:width 0.8s ease;
+  }
+  .trust-labels {
+    display:flex; justify-content:space-between;
+    margin-top:5px;
+  }
+  .trust-label {
+    font-family:var(--font-hud);
+    font-size:9px; color:var(--text-muted); letter-spacing:1px;
+  }
+  .trust-val {
+    font-family:var(--font-hud);
+    font-size:11px; color:var(--neon-blue);
+    font-weight:bold;
+  }
+
+  /* WAVE CANVAS */
+  canvas.wave { width:100%; height:36px; display:block; }
+
+  /* BLINK CHALLENGE */
+  .challenge-bar {
+    display:none;
+    align-items:center;
+    gap:12px;
+    padding:8px 14px;
+    background:rgba(255,170,0,0.05);
+    border-top:1px solid rgba(255,170,0,0.2);
+    animation:fadeIn 0.4s ease;
+  }
+  .challenge-bar.show { display:flex; }
+  .challenge-text {
+    font-family:var(--font-hud);
+    font-size:10px; letter-spacing:1px;
+    color:var(--neon-amber); flex:1;
+  }
+  .blink-counter {
+    font-family:var(--font-display);
+    font-size:14px; font-weight:700;
+    color:var(--neon-amber);
+    width:24px; text-align:center;
+  }
+  .progress-ring { flex-shrink:0; }
+
+  /* Responsive */
+  @media(max-width:900px){
+    .main-grid { grid-template-columns:1fr; }
+    .logs-panel { grid-column:1; }
+  }
+
+  /* HEATMAP */
+  .heatmap-panel .panel-body { padding:8px 14px 12px; }
+  #heatmap-canvas { width:100%; height:80px; display:block; border-radius:2px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--dark-border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="alert-overlay" id="alertOverlay"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-shield">
+      <svg viewBox="0 0 28 28" fill="none">
+        <path d="M14 2L4 6.5V13c0 5.5 4.3 10.5 10 12 5.7-1.5 10-6.5 10-12V6.5L14 2z" fill="rgba(0,207,255,0.1)" stroke="#00cfff" stroke-width="1.2"/>
+        <path d="M10 14l2.5 2.5 5.5-5.5" stroke="#00ff88" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    PROOF OF HUMAN
+  </div>
+  <div class="status-pills">
+    <span class="pill pill-green"><span class="dot dot-green" style="display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:4px"></span>ZKP ENGINE ACTIVE</span>
+    <span class="pill pill-blue">ZERO TRUST MODE</span>
+    <span class="pill pill-amber" id="sessionPill">SESSION: INIT</span>
+  </div>
+  <span class="session-id" id="sessionId">SID: —</span>
+</div>
+
+<!-- THREAT BANNER -->
+<div class="threat-banner" id="threatBanner">
+  ⚠ DEEPFAKE SIGNATURE DETECTED — SESSION QUARANTINED ⚠
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+
+  <!-- CAMERA PANEL -->
+  <div class="panel camera-panel" id="cameraPanel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="dot dot-green" id="camDot"></span>LIVENESS FEED — CHANNEL A</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-family:var(--font-hud);font-size:9px;color:var(--text-muted)" id="fpsCounter">0 FPS</span>
+        <span class="pill pill-blue" id="modePill">STANDBY</span>
+      </div>
+    </div>
+    <div class="camera-body" id="cameraBody">
+      <!-- Default placeholder -->
+      <div id="cameraPlaceholder" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#030912,#0a1a2e);gap:16px">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style="opacity:0.25">
+          <circle cx="32" cy="32" r="28" stroke="#00cfff" stroke-width="1"/>
+          <circle cx="32" cy="24" r="8" stroke="#00cfff" stroke-width="1"/>
+          <path d="M16 52c0-8.8 7.2-16 16-16s16 7.2 16 16" stroke="#00cfff" stroke-width="1"/>
+        </svg>
+        <span style="font-family:var(--font-hud);font-size:11px;color:var(--text-muted);letter-spacing:2px">NO BIOMETRIC FEED</span>
+        <span style="font-family:var(--font-hud);font-size:9px;color:rgba(74,112,144,0.6);letter-spacing:1px">PRESS START TO INITIALIZE</span>
+      </div>
+      <video id="videoEl" autoplay playsinline muted style="display:none"></video>
+      <div class="blur-lock" id="blurLock">
+        <div class="lock-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="10" y="22" width="28" height="20" rx="4" fill="rgba(255,51,85,0.2)" stroke="#ff3355" stroke-width="1.5"/>
+            <path d="M16 22v-6a8 8 0 0116 0v6" stroke="#ff3355" stroke-width="1.5" fill="none"/>
+            <circle cx="24" cy="32" r="3" fill="#ff3355"/>
+          </svg>
+          <span class="lock-txt">SESSION LOCKED</span>
+        </div>
+      </div>
+      <div class="scan-overlay" id="scanOverlay" style="display:none">
+        <div class="grid-overlay"></div>
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring"></div>
+        <div class="scan-line"></div>
+        <div class="face-box" id="faceBox">
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+          <!-- Detection markers -->
+          <div class="marker" style="top:15%;left:20%" title="rPPG sensor"></div>
+          <div class="marker" style="top:60%;left:45%;background:var(--neon-blue);box-shadow:0 0 8px var(--neon-blue)"></div>
+          <div class="marker" style="top:40%;left:75%;background:var(--neon-green);box-shadow:0 0 8px var(--neon-green)"></div>
+          <span class="marker-label" style="top:8%;left:25%;font-size:8px">PPG-A</span>
+          <span class="marker-label" style="top:53%;left:50%;font-size:8px">LIP-SYNC</span>
+          <span class="marker-label" style="top:33%;left:80%;font-size:8px">JITTER</span>
+        </div>
+      </div>
+      <div class="cam-hud" id="camHud" style="display:none">
+        <span class="hud-value"><span class="rec-dot"></span>LIVE</span>
+        <span class="hud-value" id="frameCount">FRAME: 0000</span>
+        <span class="hud-value" id="elapsedTime">00:00</span>
+        <span class="hud-value" id="resInfo">1280×720</span>
+      </div>
+    </div>
+
+    <div class="cam-controls">
+      <button class="btn btn-primary" id="startBtn" onclick="startScan()">► START SCAN</button>
+      <button class="btn btn-danger" id="stopBtn" onclick="stopScan()" disabled>■ STOP</button>
+      <button class="btn btn-ghost" id="blinkBtn" onclick="triggerBlinkChallenge()" disabled>BLINK CHALLENGE</button>
+      <div class="voice-challenge" id="voiceChallenge">🎙 SAY: "<span id="challengeWord">AURORA</span>"</div>
+    </div>
+    <div class="challenge-bar" id="challengeBar">
+      <span class="challenge-text">BLINK DETECTION ACTIVE — BLINK 3 TIMES</span>
+      <span class="blink-counter" id="blinkCount">0</span>
+      <svg class="progress-ring" width="24" height="24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="rgba(255,170,0,0.2)" stroke-width="2"/>
+        <circle id="blinkRing" cx="12" cy="12" r="9" fill="none" stroke="#ffaa00" stroke-width="2"
+          stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"
+          style="transition:stroke-dashoffset 0.3s"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- HUMANITY SCORE -->
+    <div class="panel score-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="dot dot-green" id="scoreDot"></span>HUMANITY SCORE</span>
+        <span style="font-family:var(--font-hud);font-size:9px;color:var(--text-muted)">ZKP VERIFIED</span>
+      </div>
+      <div class="panel-body">
+        <div class="score-arc">
+          <svg width="160" height="100" viewBox="0 0 160 100">
+            <path d="M20,90 A70,70 0 0,1 140,90" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round"/>
+            <path id="score-arc-path" d="M20,90 A70,70 0 0,1 140,90" fill="none" stroke="#00ff88" stroke-width="8" stroke-linecap="round"
+              stroke-dasharray="220" stroke-dashoffset="220"/>
+          </svg>
+          <div class="score-number" id="scoreNum">—</div>
+        </div>
+        <div class="score-label">BIOMETRIC CONFIDENCE INDEX</div>
+        <div class="verdict-badge verdict-scanning" id="verdictBadge">AWAITING INPUT</div>
+        <div class="shield-wrap">
+          <svg class="shield-svg" id="shieldSvg" viewBox="0 0 44 44" fill="none">
+            <path d="M22 3L6 9.5V19c0 8.8 6.8 16.8 16 19 9.2-2.2 16-10.2 16-19V9.5L22 3z" fill="rgba(0,255,136,0.1)" stroke="#00ff88" stroke-width="1.4"/>
+            <path d="M15 22l4.5 4.5 9.5-9.5" stroke="#00ff88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- SESSION TRUST -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="dot dot-blue"></span>SESSION TRUST SCORE</span>
+        <span class="hud-value" id="trustPct">0%</span>
+      </div>
+      <div class="trust-bar-wrap">
+        <div class="trust-bar-track">
+          <div class="trust-bar-fill" id="trustBar" style="width:0%"></div>
+        </div>
+        <div class="trust-labels">
+          <span class="trust-label">UNTRUSTED</span>
+          <span class="trust-label">VERIFIED</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZKP BADGES -->
+    <div class="panel zkp-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="dot dot-amber"></span>ZERO-KNOWLEDGE PROOFS</span>
+      </div>
+      <div class="panel-body">
+        <div class="zkp-row">
+          <div class="zkp-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M9 1L2 3.5V8c0 4 2.8 7.7 7 9 4.2-1.3 7-5 7-9V3.5L9 1z" stroke="#00cfff" stroke-width="1"/>
+            </svg>
+          </div>
+          <div class="zkp-info">
+            <div class="zkp-title">LIVENESS PROOF</div>
+            <div class="zkp-sub">No biometrics stored</div>
+          </div>
+          <span class="zkp-status zkp-pending" id="zkpLiveness">PENDING</span>
+        </div>
+        <div class="zkp-row">
+          <div class="zkp-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="9" r="7" stroke="#00cfff" stroke-width="1"/>
+              <path d="M6 9l2 2 4-4" stroke="#00cfff" stroke-width="1" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="zkp-info">
+            <div class="zkp-title">IDENTITY PROOF</div>
+            <div class="zkp-sub">Hash-only verification</div>
+          </div>
+          <span class="zkp-status zkp-pending" id="zkpIdentity">PENDING</span>
+        </div>
+        <div class="zkp-row">
+          <div class="zkp-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect x="3" y="7" width="12" height="9" rx="2" stroke="#00cfff" stroke-width="1"/>
+              <path d="M6 7V5a3 3 0 016 0v2" stroke="#00cfff" stroke-width="1"/>
+            </svg>
+          </div>
+          <div class="zkp-info">
+            <div class="zkp-title">SESSION PROOF</div>
+            <div class="zkp-sub">JWT one-time token</div>
+          </div>
+          <span class="zkp-status zkp-pending" id="zkpSession">PENDING</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNALS PANEL -->
+  <div class="panel signals-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="dot dot-blue" id="sigsDot"></span>FORENSIC SIGNAL ANALYSIS</span>
+      <span style="font-family:var(--font-hud);font-size:9px;color:var(--text-muted)" id="sigsTimestamp">—</span>
+    </div>
+    <div class="panel-body">
+      <div class="signal-row">
+        <div class="signal-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8c1-3 2-4 3-1s2 5 3 0 2-4 3-1 2 2 2 2" stroke="#00ff88" stroke-width="1" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <span class="signal-name">rPPG PULSE</span>
+        <div class="signal-bar-track"><div class="signal-bar-fill bar-green" id="bar-rppg" style="width:0%"></div></div>
+        <span class="signal-val" id="val-rppg">—</span>
+      </div>
+      <div class="signal-row">
+        <div class="signal-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M5 5l3-3 3 3M5 11l3 3 3-3" stroke="#00cfff" stroke-width="1" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <span class="signal-name">MICRO-JITTER</span>
+        <div class="signal-bar-track"><div class="signal-bar-fill bar-blue" id="bar-jitter" style="width:0%"></div></div>
+        <span class="signal-val" id="val-jitter">—</span>
+      </div>
+      <div class="signal-row">
+        <div class="signal-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 10V6m2.5 6V4m2.5 7V5m2.5 5V3M13 10V7" stroke="#ffaa00" stroke-width="1" stroke-linecap="round"/></svg>
+        </div>
+        <span class="signal-name">LIP-SYNC LAG</span>
+        <div class="signal-bar-track"><div class="signal-bar-fill bar-amber" id="bar-lipsync" style="width:0%"></div></div>
+        <span class="signal-val" id="val-lipsync">—</span>
+      </div>
+      <div class="signal-row">
+        <div class="signal-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="#00cfff" stroke-width="1"/><path d="M5 8c0-1.7 1.3-3 3-3s3 1.3 3 3-1.3 3-3 3" stroke="#00cfff" stroke-width="0.8" stroke-dasharray="2 1"/></svg>
+        </div>
+        <span class="signal-name">FRAME VARIANCE</span>
+        <div class="signal-bar-track"><div class="signal-bar-fill bar-blue" id="bar-variance" style="width:0%"></div></div>
+        <span class="signal-val" id="val-variance">—</span>
+      </div>
+      <div class="signal-row">
+        <div class="signal-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-6 3 4 2-3 3 5" stroke="#ff3355" stroke-width="1" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <span class="signal-name">VOICE SPECTRAL</span>
+        <div class="signal-bar-track"><div class="signal-bar-fill bar-red" id="bar-voice" style="width:0%"></div></div>
+        <span class="signal-val" id="val-voice">—</span>
+      </div>
+    </div>
+    <div class="sparkline-wrap">
+      <canvas id="waveCanvas" class="wave" height="36"></canvas>
+    </div>
+  </div>
+
+  <!-- HEATMAP PANEL -->
+  <div class="panel heatmap-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="dot dot-amber"></span>THREAT HEATMAP — SPATIAL ANALYSIS</span>
+      <span style="font-family:var(--font-hud);font-size:9px;color:var(--text-muted)">FACIAL REGION SCORING</span>
+    </div>
+    <div class="panel-body">
+      <canvas id="heatmapCanvas" height="80"></canvas>
+    </div>
+  </div>
+
+  <!-- LOGS PANEL -->
+  <div class="panel logs-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="dot dot-blue"></span>FORENSIC TIMELINE</span>
+      <div style="display:flex;gap:8px">
+        <span style="font-family:var(--font-hud);font-size:9px;color:var(--text-muted)" id="logCount">0 EVENTS</span>
+        <button class="btn btn-ghost" onclick="clearLogs()" style="padding:2px 8px;font-size:7px">CLEAR</button>
+      </div>
+    </div>
+    <div class="logs-body" id="logsBody"></div>
+  </div>
+
+</div>
+
+<script>
+// ===== STATE =====
+let scanning = false, stream = null;
+let frameCount = 0, startTime = null;
+let score = 0, trustScore = 0;
+let blinksDone = 0, blinkChallengeActive = false;
+let logEntries = [], logCounter = 0;
+let animFrame = null, signalInterval = null;
+let state = 'idle'; // idle | scanning | human | ai
+let waveData = new Array(80).fill(0);
+const CHALLENGES = ['AURORA','ZENITH','FALCON','CIPHER','NEXUS','VERTEX','PHOTON'];
+let challengeIdx = 0;
+
+// ===== INIT SESSION ID =====
+const sid = 'POH-' + Math.random().toString(36).slice(2,8).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+document.getElementById('sessionId').textContent = 'SID: ' + sid;
+
+// ===== LOGS =====
+function addLog(tag, msg, type='info') {
+  const ts = new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  logEntries.unshift({ts,tag,msg,type});
+  if(logEntries.length>50) logEntries.pop();
+  renderLogs();
+}
+function renderLogs(){
+  const body = document.getElementById('logsBody');
+  body.innerHTML = logEntries.slice(0,20).map(l=>
+    `<div class="log-entry">
+      <span class="log-ts">${l.ts}</span>
+      <span class="log-tag tag-${l.type}">${l.tag}</span>
+      <span class="log-msg">${l.msg}</span>
+    </div>`
+  ).join('');
+  document.getElementById('logCount').textContent = logEntries.length + ' EVENTS';
+}
+function clearLogs(){ logEntries=[]; renderLogs(); }
+
+// ===== SCORE ARC =====
+function setScore(val) {
+  score = Math.max(0, Math.min(100, val));
+  document.getElementById('scoreNum').textContent = Math.round(score);
+  const arc = document.getElementById('score-arc-path');
+  const offset = 220 - (220 * score / 100);
+  arc.style.strokeDashoffset = offset;
+  const color = score >= 70 ? '#00ff88' : score >= 40 ? '#ffaa00' : '#ff3355';
+  arc.style.stroke = color;
+  document.getElementById('scoreNum').style.color = color;
+  setTrust(score * 0.9 + Math.random() * 8);
+}
+function setTrust(val) {
+  trustScore = Math.max(0, Math.min(100, val));
+  document.getElementById('trustBar').style.width = trustScore + '%';
+  document.getElementById('trustPct').textContent = Math.round(trustScore) + '%';
+}
+
+// ===== SIGNALS =====
+const signals = {
+  rppg: {bar:'bar-rppg', val:'val-rppg', unit:'bpm', min:55, max:90, color:'green'},
+  jitter:{bar:'bar-jitter', val:'val-jitter', unit:'μm', min:2, max:18, color:'blue'},
+  lipsync:{bar:'bar-lipsync', val:'val-lipsync', unit:'ms', min:10, max:120, color:'amber'},
+  variance:{bar:'bar-variance', val:'val-variance', unit:'σ', min:0.1, max:0.9, color:'blue'},
+  voice:{bar:'bar-voice', val:'val-voice', unit:'kHz', min:0.2, max:8.0, color:'red'},
+};
+let sigVals = {rppg:72, jitter:8, lipsync:45, variance:0.4, voice:3.2};
+
+function updateSignals(isAi=false) {
+  if(isAi) {
+    sigVals.rppg += (25 - sigVals.rppg)*0.1 + (Math.random()-0.5)*3;
+    sigVals.jitter += (15 - sigVals.jitter)*0.1 + (Math.random()-0.5)*2;
+    sigVals.lipsync += (95 - sigVals.lipsync)*0.08 + (Math.random()-0.5)*8;
+    sigVals.variance += (0.8 - sigVals.variance)*0.08 + (Math.random()-0.5)*0.05;
+    sigVals.voice += (7.5 - sigVals.voice)*0.08 + (Math.random()-0.5)*0.5;
+  } else {
+    sigVals.rppg += (70 - sigVals.rppg)*0.05 + (Math.random()-0.5)*4;
+    sigVals.jitter += (7 - sigVals.jitter)*0.05 + (Math.random()-0.5)*1.5;
+    sigVals.lipsync += (30 - sigVals.lipsync)*0.05 + (Math.random()-0.5)*5;
+    sigVals.variance += (0.3 - sigVals.variance)*0.05 + (Math.random()-0.5)*0.03;
+    sigVals.voice += (3.5 - sigVals.voice)*0.05 + (Math.random()-0.5)*0.3;
+  }
+  sigVals.rppg = Math.max(30, Math.min(130, sigVals.rppg));
+  sigVals.jitter = Math.max(1, Math.min(30, sigVals.jitter));
+  sigVals.lipsync = Math.max(5, Math.min(150, sigVals.lipsync));
+  sigVals.variance = Math.max(0.05, Math.min(1.0, sigVals.variance));
+  sigVals.voice = Math.max(0.1, Math.min(10, sigVals.voice));
+
+  // Update bars
+  const maxes = {rppg:130, jitter:30, lipsync:150, variance:1.0, voice:10};
+  Object.keys(sigVals).forEach(k => {
+    const pct = (sigVals[k]/maxes[k])*100;
+    document.getElementById('bar-'+k).style.width = pct+'%';
+  });
+  document.getElementById('val-rppg').textContent = Math.round(sigVals.rppg)+'bpm';
+  document.getElementById('val-jitter').textContent = sigVals.jitter.toFixed(1)+'μm';
+  document.getElementById('val-lipsync').textContent = Math.round(sigVals.lipsync)+'ms';
+  document.getElementById('val-variance').textContent = sigVals.variance.toFixed(2)+'σ';
+  document.getElementById('val-voice').textContent = sigVals.voice.toFixed(1)+'kHz';
+  document.getElementById('sigsTimestamp').textContent = new Date().toLocaleTimeString('en',{hour12:false});
+}
+
+// ===== WAVE CANVAS =====
+function drawWave(isAi=false) {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  const W = canvas.width, H = 36;
+  ctx.clearRect(0,0,W,H);
+  // Update wave data
+  const newVal = isAi
+    ? (Math.random() > 0.3 ? Math.random()*0.9 : Math.random()*0.2)
+    : 0.3 + Math.sin(Date.now()/300)*0.2 + Math.random()*0.15;
+  waveData.push(newVal); waveData.shift();
+  // Draw
+  ctx.beginPath();
+  const step = W / (waveData.length-1);
+  waveData.forEach((v,i) => {
+    const x = i * step;
+    const y = H/2 - v*(H/2-2);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  const color = isAi ? '#ff3355' : '#00cfff';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.lineTo(W,H); ctx.lineTo(0,H);
+  ctx.fillStyle = isAi ? 'rgba(255,51,85,0.06)' : 'rgba(0,207,255,0.06)';
+  ctx.fill();
+}
+
+// ===== HEATMAP =====
+function drawHeatmap(threatLevel=0.2) {
+  const canvas = document.getElementById('heatmapCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth || 600;
+  const W = canvas.width, H = 80;
+  ctx.clearRect(0,0,W,H);
+  // Simulate face heatmap zones
+  const zones = [
+    {x:0.15,y:0.35,r:0.08,lbl:'L.EYE', heat:1-threatLevel+Math.random()*0.1},
+    {x:0.85,y:0.35,r:0.08,lbl:'R.EYE', heat:1-threatLevel+Math.random()*0.1},
+    {x:0.5, y:0.25,r:0.07,lbl:'BROW',  heat:0.8-threatLevel+Math.random()*0.15},
+    {x:0.5, y:0.55,r:0.1, lbl:'NOSE',  heat:0.6+Math.random()*0.1},
+    {x:0.5, y:0.82,r:0.1, lbl:'MOUTH', heat:1-threatLevel*1.5+Math.random()*0.2},
+    {x:0.2, y:0.6, r:0.07,lbl:'L.CHEEK',heat:1-threatLevel+Math.random()*0.1},
+    {x:0.8, y:0.6, r:0.07,lbl:'R.CHEEK',heat:1-threatLevel+Math.random()*0.1},
+  ];
+  // Draw face outline
+  ctx.strokeStyle = 'rgba(0,207,255,0.2)';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.ellipse(W*0.5, H*0.5, W*0.22, H*0.4, 0, 0, Math.PI*2);
+  ctx.stroke();
+  // Draw heat zones
+  zones.forEach(z => {
+    const h = Math.max(0, Math.min(1, z.heat));
+    const cx = z.x*W, cy = z.y*H, r = z.r*Math.min(W,H);
+    const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,r*2);
+    if(h > 0.6) {
+      grad.addColorStop(0, `rgba(0,255,136,${h*0.7})`);
+      grad.addColorStop(1, 'transparent');
+    } else if(h > 0.3) {
+      grad.addColorStop(0, `rgba(255,170,0,${h*0.8})`);
+      grad.addColorStop(1, 'transparent');
+    } else {
+      grad.addColorStop(0, `rgba(255,51,85,${(1-h)*0.8})`);
+      grad.addColorStop(1, 'transparent');
+    }
+    ctx.beginPath();
+    ctx.arc(cx,cy,r*2,0,Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    // Label
+    ctx.fillStyle = 'rgba(74,112,144,0.9)';
+    ctx.font = '7px "Share Tech Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(z.lbl, cx, cy+r*2+6);
+    // Score
+    ctx.fillStyle = h > 0.6 ? '#00ff88' : h > 0.3 ? '#ffaa00' : '#ff3355';
+    ctx.fillText(Math.round(h*100)+'%', cx, cy+4);
+  });
+}
+
+// ===== SCAN LOOP =====
+let scanPhase = 0; // 0=scanning, 1=verdict
+function scanTick() {
+  if(!scanning) return;
+  frameCount++;
+  const elapsed = (Date.now() - startTime) / 1000;
+  document.getElementById('frameCount').textContent = 'FRAME: ' + String(frameCount).padStart(4,'0');
+  document.getElementById('elapsedTime').textContent =
+    String(Math.floor(elapsed/60)).padStart(2,'0') + ':' + String(Math.floor(elapsed%60)).padStart(2,'0');
+  const fps = Math.round(frameCount / Math.max(elapsed,0.01));
+  document.getElementById('fpsCounter').textContent = fps + ' FPS';
+
+  // After 5s, give verdict
+  if(elapsed >= 5 && scanPhase === 0) {
+    scanPhase = 1;
+    giveVerdict();
+    return;
+  }
+
+  // Build up score during scan
+  if(scanPhase === 0) {
+    const progress = elapsed / 5;
+    const targetScore = 72 + Math.random()*15;
+    setScore(score + (targetScore - score) * 0.05 + Math.random()*2);
+    updateSignals(false);
+    drawWave(false);
+    drawHeatmap(0.15 + Math.random()*0.1);
+  } else if(state === 'ai') {
+    updateSignals(true);
+    drawWave(true);
+    drawHeatmap(0.8 + Math.random()*0.15);
+  } else {
+    updateSignals(false);
+    drawWave(false);
+    drawHeatmap(0.1 + Math.random()*0.1);
+  }
+
+  animFrame = requestAnimationFrame(scanTick);
+}
+
+// ===== VERDICT =====
+function giveVerdict() {
+  // For demo: always human first, use button for AI sim
+  const isHuman = Math.random() > 0.2; // 80% human
+  state = isHuman ? 'human' : 'ai';
+  if(isHuman) setHumanState();
+  else setAiState();
+  animFrame = requestAnimationFrame(scanTick);
+}
+
+function setHumanState() {
+  state = 'human';
+  setScore(85 + Math.random()*12);
+  document.getElementById('verdictBadge').className = 'verdict-badge verdict-human';
+  document.getElementById('verdictBadge').textContent = '✓ HUMAN VERIFIED';
+  document.getElementById('shieldSvg').classList.add('active');
+  document.getElementById('shieldSvg').classList.remove('threat');
+  document.getElementById('modePill').textContent = 'VERIFIED';
+  document.getElementById('modePill').style.color = 'var(--neon-green)';
+  document.getElementById('modePill').style.borderColor = 'rgba(0,255,136,0.3)';
+  document.getElementById('alertOverlay').classList.remove('active');
+  document.getElementById('threatBanner').classList.remove('show');
+  document.getElementById('blurLock').classList.remove('active');
+  document.getElementById('faceBox').classList.remove('threat');
+  document.getElementById('sessionPill').textContent = 'SESSION: ACTIVE';
+  // ZKP badges
+  setTimeout(()=>{
+    document.getElementById('zkpLiveness').textContent = 'VERIFIED';
+    document.getElementById('zkpLiveness').className = 'zkp-status zkp-verified';
+    addLog('OK','Liveness proof generated — ZKP hash committed','ok');
+  }, 600);
+  setTimeout(()=>{
+    document.getElementById('zkpIdentity').textContent = 'VERIFIED';
+    document.getElementById('zkpIdentity').className = 'zkp-status zkp-verified';
+    addLog('OK','Identity proof verified — no biometric data stored','ok');
+  }, 1100);
+  setTimeout(()=>{
+    document.getElementById('zkpSession').textContent = 'VERIFIED';
+    document.getElementById('zkpSession').className = 'zkp-status zkp-verified';
+    addLog('OK','Session JWT issued — SID bound to ZKP certificate','ok');
+  }, 1600);
+  addLog('PASS','Human identity confirmed — score '+Math.round(score)+'/100','ok');
+  addLog('INFO','rPPG heartbeat detected: '+Math.round(sigVals.rppg)+'bpm','info');
+  addLog('INFO','Micro-jitter within human range: '+sigVals.jitter.toFixed(1)+'μm','info');
+}
+
+function setAiState() {
+  state = 'ai';
+  setScore(12 + Math.random()*15);
+  document.getElementById('verdictBadge').className = 'verdict-badge verdict-ai';
+  document.getElementById('verdictBadge').textContent = '✗ AI SUSPECTED';
+  document.getElementById('shieldSvg').classList.remove('active');
+  document.getElementById('shieldSvg').classList.add('threat');
+  document.getElementById('modePill').textContent = 'THREAT';
+  document.getElementById('modePill').style.color = 'var(--neon-red)';
+  document.getElementById('modePill').style.borderColor = 'rgba(255,51,85,0.3)';
+  document.getElementById('alertOverlay').classList.add('active');
+  document.getElementById('threatBanner').classList.add('show');
+  document.getElementById('blurLock').classList.add('active');
+  document.getElementById('faceBox').classList.add('threat');
+  document.getElementById('sessionPill').textContent = 'SESSION: QUARANTINED';
+  addLog('FAIL','DEEPFAKE SIGNATURE DETECTED — session quarantined','fail');
+  addLog('WARN','rPPG signal absent — no pulse waveform detected','warn');
+  addLog('FAIL','Lip-sync latency '+Math.round(sigVals.lipsync)+'ms — exceeds threshold','fail');
+  addLog('WARN','Frame variance anomaly: σ='+sigVals.variance.toFixed(2),'warn');
+}
+
+// ===== BLINK CHALLENGE =====
+function triggerBlinkChallenge() {
+  if(blinkChallengeActive) return;
+  blinkChallengeActive = true; blinksDone = 0;
+  document.getElementById('challengeBar').classList.add('show');
+  document.getElementById('blinkCount').textContent = '0';
+  document.getElementById('blinkRing').style.strokeDashoffset = '56.5';
+  addLog('CHALL','Blink challenge initiated — 3 blinks required','info');
+  // Simulate blinks detected
+  [1200,2400,3500].forEach((t,i) => {
+    setTimeout(()=>{
+      blinksDone = i+1;
+      document.getElementById('blinkCount').textContent = blinksDone;
+      const offset = 56.5 * (1 - blinksDone/3);
+      document.getElementById('blinkRing').style.strokeDashoffset = offset;
+      addLog('BLINK','Blink '+(i+1)+'/3 detected','ok');
+      if(blinksDone===3){
+        setTimeout(()=>{
+          document.getElementById('challengeBar').classList.remove('show');
+          blinkChallengeActive=false;
+          addLog('PASS','Blink challenge complete — liveness confirmed','ok');
+          if(state==='human') setScore(Math.min(100, score+5));
+        },800);
+      }
+    },t);
+  });
+}
+
+// ===== VOICE CHALLENGE =====
+function triggerVoiceChallenge() {
+  document.getElementById('challengeWord').textContent = CHALLENGES[challengeIdx % CHALLENGES.length];
+  challengeIdx++;
+  document.getElementById('voiceChallenge').style.display = 'block';
+  addLog('CHALL','Voice challenge: say "'+CHALLENGES[(challengeIdx-1)%CHALLENGES.length]+'"','info');
+  setTimeout(()=>{
+    document.getElementById('voiceChallenge').style.display = 'none';
+    addLog('PASS','Voice challenge responded — spectral match: 94.2%','ok');
+  }, 5000);
+}
+
+// ===== START / STOP =====
+async function startScan() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    const video = document.getElementById('videoEl');
+    video.srcObject = stream;
+    document.getElementById('cameraPlaceholder').style.display='none';
+    video.style.display='block';
+  } catch(e) {
+    // No camera — use placeholder but continue demo
+    addLog('WARN','Camera unavailable — running in simulation mode','warn');
+    document.getElementById('cameraPlaceholder').innerHTML =
+      '<div style="font-family:var(--font-hud);font-size:11px;color:rgba(0,207,255,0.5);letter-spacing:2px;text-align:center;padding:20px">' +
+      '<div style="font-size:28px;margin-bottom:8px">📹</div>SIMULATION MODE<br><span style="font-size:9px;opacity:0.6">Camera not available</span></div>';
+  }
+  scanning = true; scanPhase = 0; state = 'scanning';
+  startTime = Date.now(); frameCount = 0; blinksDone = 0;
+  score = 0; trustScore = 0;
+  setScore(0); setTrust(0);
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('blinkBtn').disabled = false;
+  document.getElementById('scanOverlay').style.display='block';
+  document.getElementById('camHud').style.display='flex';
+  document.getElementById('cameraPanel').classList.add('scanning');
+  document.getElementById('modePill').textContent = 'SCANNING';
+  document.getElementById('modePill').style.color = 'var(--neon-blue)';
+  document.getElementById('verdictBadge').className = 'verdict-badge verdict-scanning';
+  document.getElementById('verdictBadge').textContent = 'SCANNING...';
+  document.getElementById('sessionPill').textContent = 'SESSION: SCANNING';
+  // Reset ZKP
+  ['zkpLiveness','zkpIdentity','zkpSession'].forEach(id=>{
+    document.getElementById(id).textContent='PENDING';
+    document.getElementById(id).className='zkp-status zkp-pending';
+  });
+  addLog('INFO','Scan initiated — session '+sid.slice(0,12)+'...','info');
+  addLog('INFO','Loading face detection model...','info');
+  setTimeout(()=>addLog('INFO','MediaPipe FaceDetection loaded','info'),400);
+  setTimeout(()=>addLog('INFO','rPPG module initialized','info'),800);
+  setTimeout(()=>addLog('INFO','Frame sampling at 30fps','info'),1200);
+  setTimeout(()=>triggerVoiceChallenge(), 2000);
+  setTimeout(()=>{ if(state==='scanning') triggerBlinkChallenge(); },1500);
+  animFrame = requestAnimationFrame(scanTick);
+}
+
+function stopScan() {
+  scanning = false;
+  if(animFrame) cancelAnimationFrame(animFrame);
+  if(stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  document.getElementById('videoEl').style.display='none';
+  document.getElementById('videoEl').srcObject=null;
+  document.getElementById('cameraPlaceholder').style.display='flex';
+  document.getElementById('cameraPlaceholder').innerHTML =
+    '<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">' +
+    '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="opacity:0.2"><circle cx="24" cy="24" r="20" stroke="#00cfff" stroke-width="1"/><circle cx="24" cy="18" r="6" stroke="#00cfff" stroke-width="1"/><path d="M12 40c0-6.6 5.4-12 12-12s12 5.4 12 12" stroke="#00cfff" stroke-width="1"/></svg>' +
+    '<span style="font-family:var(--font-hud);font-size:11px;color:rgba(74,112,144,0.7);letter-spacing:2px">FEED TERMINATED</span></div>';
+  document.getElementById('scanOverlay').style.display='none';
+  document.getElementById('camHud').style.display='none';
+  document.getElementById('cameraPanel').classList.remove('scanning');
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('blinkBtn').disabled = true;
+  document.getElementById('modePill').textContent = 'STANDBY';
+  document.getElementById('modePill').style.color = '';
+  document.getElementById('modePill').style.borderColor = '';
+  document.getElementById('alertOverlay').classList.remove('active');
+  document.getElementById('threatBanner').classList.remove('show');
+  document.getElementById('blurLock').classList.remove('active');
+  document.getElementById('challengeBar').classList.remove('show');
+  document.getElementById('voiceChallenge').style.display='none';
+  document.getElementById('faceBox').classList.remove('threat');
+  document.getElementById('shieldSvg').classList.remove('active','threat');
+  state = 'idle';
+  addLog('INFO','Session terminated — logs retained in memory','info');
+}
+
+// ===== DRAW INITIAL HEATMAP =====
+window.addEventListener('load', ()=>{
+  drawHeatmap(0.2);
+  drawWave(false);
+});
+window.addEventListener('resize', ()=>{
+  drawHeatmap(state==='ai' ? 0.9 : 0.2);
+});
+</script>
+</body>
+</html>
